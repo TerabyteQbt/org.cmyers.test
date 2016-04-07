@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+eval export JAVA_HOME=\$JAVA_${QBT_ENV_JDK}_HOME
+
+# this is a multi-package directory.  org.cmyers.practice.N and
+# org.cmyers.practice.N.release will both have the same prefix and build out of the
+# same package directory to avoid littering all over the place in this repo.
+
+if [[ "$PACKAGE_NAME" =~ release$ ]]; then
+    # release package
+    SRC_PKG=$(echo $PACKAGE_NAME | sed -e 's/\.release$//g')
+    echo "SRC PKG: $SRC_PKG"
+
+    $INPUT_ARTIFACTS_DIR/weak/qbt_fringe.wrapper_generator.release/strong/qbt_fringe.wrapper_generator.release/bin/wrapper_generator $INPUT_ARTIFACTS_DIR/weak/$SRC_PKG/strong $OUTPUT_ARTIFACTS_DIR main ${SRC_PKG}.Main
+    exit 0;
+fi
+
+# normal package
+
+# main
+if [ -d src ]; then "$INPUT_ARTIFACTS_DIR"/weak/qbt_fringe.linter.release/strong/qbt_fringe.linter.release/bin/linter -d src; fi
+"$INPUT_ARTIFACTS_DIR"/weak/3p.gradle/strong/3p.gradle/bin/gradle --stacktrace check uploadArchive
+
+# test
+if [ -d test ]; then "$INPUT_ARTIFACTS_DIR"/weak/qbt_fringe.linter.release/strong/qbt_fringe.linter.release/bin/linter -d test; fi
+"$INPUT_ARTIFACTS_DIR"/weak/3p.gradle/strong/3p.gradle/bin/gradle --stacktrace check uploadArchive
